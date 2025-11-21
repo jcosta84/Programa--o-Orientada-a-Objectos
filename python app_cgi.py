@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gestão de Clientes — Interface HTML (Opção B)</title>
+  <style>
+    :root{--bg:#f7fafc;--card:#ffffff;--muted:#6b7280;--accent:#2563eb}
+    body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin:0; background:var(--bg); color:#111827}
+    .container{max-width:1100px;margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;justify-content:space-between}
+    header h1{margin:0;font-size:20px}
+    nav{margin-top:18px;display:flex;gap:8px}
+    .tab{background:var(--card);padding:10px 14px;border-radius:8px;cursor:pointer;border:1px solid #e6e9ee}
+    .tab.active{box-shadow:0 6px 18px rgba(15,23,42,0.06);border-color:var(--accent)}
+    .card{background:var(--card);padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(15,23,42,0.04);margin-top:14px}
+    label{display:block;margin-top:10px;font-size:14px}
+    input[type=text], input[type=email], input[type=file], textarea, select{width:100%;padding:8px;border-radius:8px;border:1px solid #e6e9ee}
+    button{background:var(--accent);color:#fff;padding:10px 14px;border-radius:8px;border:0;cursor:pointer;margin-top:10px}
+    .row{display:flex;gap:12px}
+    .col{flex:1}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th, td{padding:8px;border-bottom:1px solid #f1f5f9;text-align:left}
+    .muted{color:var(--muted)}
+    .small{font-size:13px}
+    .success{color:green}
+    .error{color:red}
+    .badge{display:inline-block;padding:6px 8px;border-radius:999px;background:#eef2ff;color:#3730a3;font-weight:600;font-size:12px}
+    footer{margin-top:18px;color:var(--muted);font-size:13px}
+    @media(max-width:800px){.row{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📧 Gestão de Clientes — Interface HTML (Opção B)</h1>
+      <div class="small muted">Modo: Frontend estático (localStorage)</div>
+    </header>
+
+    <nav id="tabs">
+      <div class="tab active" data-tab="cadastro">Cadastro</div>
+      <div class="tab" data-tab="cc">Para Conhecimento (CC)</div>
+      <div class="tab" data-tab="consultar">Consultar Cadastro</div>
+      <div class="tab" data-tab="envio">Envio de E-mails</div>
+      <div class="tab" data-tab="relatorio">Relatório</div>
+    </nav>
+
+    <!-- Cadastro -->
+    <section id="cadastro" class="card">
+      <h2>📋 Cadastro de Cliente</h2>
+      <form id="formCadastro">
+        <div class="row">
+          <div class="col">
+            <label for="cil">CIL</label>
+            <input type="text" id="cil" required />
+          </div>
+          <div class="col">
+            <label for="nome">Nome</label>
+            <input type="text" id="nome" required />
+          </div>
+          <div class="col">
+            <label for="email">Email</label>
+            <input type="email" id="email" required />
+          </div>
+        </div>
+
+        <label for="nomePdf">Nome PDF (gerado)</label>
+        <input type="text" id="nomePdf" disabled />
+        <button type="submit">Cadastrar Cliente</button>
+        <div id="msgCadastro" class="small muted"></div>
+      </form>
+    </section>
+
+    <!-- CC -->
+    <section id="cc" class="card" style="display:none">
+      <h2>📋 E-mails para Conhecimento (CC)</h2>
+      <div>
+        <label for="novoCc">Adicionar novo e-mail CC</label>
+        <input type="email" id="novoCc" placeholder="exemplo@dominio.com" />
+        <button id="btnAddCc">Adicionar CC</button>
+      </div>
+      <div id="listaCc"></div>
+    </section>
+
+    <!-- Consultar -->
+    <section id="consultar" class="card" style="display:none">
+      <h2>🔎 Consultar Cliente</h2>
+      <div class="row">
+        <div class="col">
+          <label for="selCil">Filtrar por CIL</label>
+          <select id="selCil" multiple style="height:120px"></select>
+          <button id="btnFiltrar">Aplicar Filtro</button>
+        </div>
+        <div class="col">
+          <label>Clientes</label>
+          <div id="tabelaClientes"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Envio -->
+    <section id="envio" class="card" style="display:none">
+      <h2>📤 Envio de E-mails (simulação)</h2>
+      <p class="muted small">Selecione arquivos PDF (nome deve ser igual ao campo &quot;arquivo_anexo&quot; de cada cliente).</p>
+      <input type="file" id="pdfs" multiple accept="application/pdf" />
+      <div style="margin-top:12px">
+        <button id="btnEnviar">Enviar E-mails (simular)</button>
+        <div id="progresso" class="small muted"></div>
+      </div>
+    </section>
+
+    <!-- Relatório -->
+    <section id="relatorio" class="card" style="display:none">
+      <h2>📊 Relatório de Envios</h2>
+      <p class="muted small">Relatórios são gerados localmente (CSV). É uma simulação para a interface frontend.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <button id="btnGerarCSV">Exportar CSV</button>
+        <button id="btnLimparRel">Limpar Relatório</button>
+      </div>
+      <div id="tabelaRelatorio" style="margin-top:12px"></div>
+    </section>
+
+    <footer>
+      <div class="muted">Esta versão é um frontend estático — para integração com o banco de dados e envio real de e-mails utilize a versão Flask (Opção C).</div>
+    </footer>
+  </div>
+
+  <script>
+    /* ---------- Utilitários de armazenamento local (localStorage) ---------- */
+    const DB_KEYS = {
+      CLIENTES: 'app_clientes_v1',
+      CC: 'app_cc_v1',
+      REL: 'app_relatorio_v1'
+    }
+
+    function carregar(key){
+      const raw = localStorage.getItem(key)
+      return raw ? JSON.parse(raw) : []
+    }
+    function salvar(key, data){
+      localStorage.setItem(key, JSON.stringify(data))
+    }
+
+    /* ---------- Inicialização ---------- */
+    function init(){
+      // Tabs
+      document.querySelectorAll('#tabs .tab').forEach(t => t.addEventListener('click', ()=>{switchTab(t.dataset.tab)}))
+
+      // Form cadastro
+      const form = document.getElementById('formCadastro')
+      form.addEventListener('submit', (e)=>{
+        e.preventDefault();
+        cadastrarCliente()
+      })
+
+      document.getElementById('cil').addEventListener('input', ()=>{
+        const cil = document.getElementById('cil').value.trim()
+        document.getElementById('nomePdf').value = cil ? cil + '.pdf' : ''
+      })
+
+      // CC
+      document.getElementById('btnAddCc').addEventListener('click', addCc)
+
+      // Consultar
+      document.getElementById('btnFiltrar').addEventListener('click', renderClientes)
+
+      // Envio
+      document.getElementById('btnEnviar').addEventListener('click', simularEnvio)
+
+      // Relatório
+      document.getElementById('btnGerarCSV').addEventListener('click', exportarCSV)
+      document.getElementById('btnLimparRel').addEventListener('click', ()=>{ if(confirm('Limpar relatório?')){salvar(DB_KEYS.REL,[]); renderRelatorio()} })
+
+      renderCc(); renderClientes(); renderRelatorio(); renderSelCilOptions();
+    }
+
+    function switchTab(tab){
+      document.querySelectorAll('section').forEach(s=>s.style.display='none')
+      document.getElementById(tab).style.display='block'
+      document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.remove('active'))
+      document.querySelector(`#tabs .tab[data-tab="${tab}"]`).classList.add('active')
+      if(tab === 'consultar') renderClientes()
+      if(tab === 'relatorio') renderRelatorio()
+    }
+
+    /* ---------- Clientes ---------- */
+    function cadastrarCliente(){
+      const cil = document.getElementById('cil').value.trim()
+      const nome = document.getElementById('nome').value.trim()
+      const email = document.getElementById('email').value.trim()
+      const arquivo = cil ? cil + '.pdf' : ''
+      const msg = document.getElementById('msgCadastro')
+
+      if(!cil || !nome || !email){ msg.textContent = 'Por favor preencha todos os campos.'; msg.className='error'; return }
+
+      const clientes = carregar(DB_KEYS.CLIENTES)
+      if(clientes.some(c=>c.cil === cil)){
+        msg.textContent = 'Cliente com este CIL já está cadastrado.'; msg.className='muted'; return
+      }
+
+      clientes.push({cil, nome, email, arquivo_anexo: arquivo})
+      salvar(DB_KEYS.CLIENTES, clientes)
+      msg.textContent = 'Cliente cadastrado com sucesso!'; msg.className='success'
+      form.reset && form.reset()
+      document.getElementById('nomePdf').value = ''
+      renderClientes(); renderSelCilOptions();
+    }
+
+    function renderClientes(){
+      const clientes = carregar(DB_KEYS.CLIENTES)
+      const sel = document.getElementById('selCil')
+      const selected = Array.from(sel.selectedOptions).map(o=>o.value)
+      const filtro = selected.length ? clientes.filter(c=> selected.includes(c.cil)) : clientes
+
+      let html = '<table><thead><tr><th>CIL</th><th>Nome</th><th>Email</th><th>Anexo</th><th>Ações</th></tr></thead><tbody>'
+      filtro.forEach(c=>{
+        html += `<tr><td>${c.cil}</td><td>${c.nome}</td><td>${c.email}</td><td class="small muted">${c.arquivo_anexo}</td><td><button onclick="editarCliente('${c.cil}')">Editar</button> <button onclick="excluirCliente('${c.cil}')">Excluir</button></td></tr>`
+      })
+      html += '</tbody></table>'
+      document.getElementById('tabelaClientes').innerHTML = html
+    }
+
+    function renderSelCilOptions(){
+      const sel = document.getElementById('selCil')
+      const clientes = carregar(DB_KEYS.CLIENTES)
+      sel.innerHTML = ''
+      clientes.forEach(c=>{ const opt = document.createElement('option'); opt.value=c.cil; opt.textContent=c.cil; sel.appendChild(opt) })
+    }
+
+    function editarCliente(cil){
+      const clientes = carregar(DB_KEYS.CLIENTES)
+      const c = clientes.find(x=>x.cil===cil)
+      if(!c) return alert('Cliente não encontrado')
+      const novoNome = prompt('Nome:', c.nome)
+      if(novoNome===null) return
+      const novoEmail = prompt('Email:', c.email)
+      if(novoEmail===null) return
+      c.nome = novoNome
+      c.email = novoEmail
+      salvar(DB_KEYS.CLIENTES, clientes)
+      renderClientes(); renderSelCilOptions()
+    }
+
+    function excluirCliente(cil){
+      if(!confirm('Excluir cliente?')) return
+      let clientes = carregar(DB_KEYS.CLIENTES)
+      clientes = clientes.filter(c=>c.cil!==cil)
+      salvar(DB_KEYS.CLIENTES, clientes)
+      renderClientes(); renderSelCilOptions()
+    }
+
+    /* ---------- CC ---------- */
+    function addCc(){
+      const email = document.getElementById('novoCc').value.trim()
+      if(!email) return alert('Insira um e-mail')
+      const cc = carregar(DB_KEYS.CC)
+      if(cc.includes(email)) return alert('Já existe')
+      cc.push(email); salvar(DB_KEYS.CC, cc); document.getElementById('novoCc').value=''; renderCc()
+    }
+
+    function renderCc(){
+      const cc = carregar(DB_KEYS.CC)
+      if(cc.length===0){ document.getElementById('listaCc').innerHTML='<div class="muted small">Nenhum e-mail CC cadastrado.</div>'; return }
+      let html = '<table><thead><tr><th>E-mail CC</th><th>Ações</th></tr></thead><tbody>'
+      cc.forEach((e, i)=>{ html += `<tr><td>${e}</td><td><button onclick="remCc(${i})">Remover</button></td></tr>` })
+      html += '</tbody></table>'
+      document.getElementById('listaCc').innerHTML = html
+    }
+
+    function remCc(index){ const cc = carregar(DB_KEYS.CC); cc.splice(index,1); salvar(DB_KEYS.CC,cc); renderCc() }
+
+    /* ---------- Envio simulado ---------- */
+    async function simularEnvio(){
+      const arquivos = document.getElementById('pdfs').files
+      if(!arquivos.length) return alert('Selecione pelo menos um PDF')
+      const clientes = carregar(DB_KEYS.CLIENTES)
+      if(clientes.length===0) return alert('Nenhum cliente cadastrado')
+
+      // Mapear nomes de arquivo para File
+      const map = {}
+      for(const f of arquivos) map[f.name] = f
+
+      const rel = carregar(DB_KEYS.REL)
+      const ccGlobal = carregar(DB_KEYS.CC)
+      let enviados = 0
+      const progresso = document.getElementById('progresso')
+
+      for(const c of clientes){
+        if(c.arquivo_anexo && map[c.arquivo_anexo]){
+          // Simulação: ler o arquivo e marcar como enviado
+          // aqui poderíamos usar FileReader para processar, mas apenas simulamos
+          const status = 'Sucesso'
+          const msg = 'Simulação: email enviado'
+          rel.unshift({nome:c.nome, email:c.email, cil:c.cil, status, mensagem:msg, data_envio:new Date().toISOString(), cc: ccGlobal})
+          enviados++
+        } else {
+          // não há anexo correspondente -> pular
+          rel.unshift({nome:c.nome, email:c.email, cil:c.cil, status:'Pendente', mensagem:'Arquivo não encontrado', data_envio:new Date().toISOString(), cc: ccGlobal})
+        }
+        progresso.textContent = `Processados: ${enviados} / ${clientes.length}`
+        await new Promise(r=>setTimeout(r, 250))
+      }
+
+      salvar(DB_KEYS.REL, rel)
+      renderRelatorio()
+      alert('Envio simulado concluído')
+    }
+
+    /* ---------- Relatório ---------- */
+    function renderRelatorio(){
+      const rel = carregar(DB_KEYS.REL)
+      if(rel.length===0){ document.getElementById('tabelaRelatorio').innerHTML = '<div class="muted small">Sem entradas no relatório.</div>'; return }
+      let html = '<table><thead><tr><th>Nome</th><th>Email</th><th>CIL</th><th>Status</th><th>Mensagem</th><th>Data</th></tr></thead><tbody>'
+      rel.forEach(r=>{ html += `<tr><td>${r.nome}</td><td>${r.email}</td><td>${r.cil}</td><td>${r.status}</td><td class="small muted">${r.mensagem}</td><td>${new Date(r.data_envio).toLocaleString()}</td></tr>` })
+      html += '</tbody></table>'
+      document.getElementById('tabelaRelatorio').innerHTML = html
+    }
+
+    function exportarCSV(){
+      const rel = carregar(DB_KEYS.REL)
+      if(rel.length===0) return alert('Sem dados para exportar')
+      const rows = [['nome','email','cil','status','mensagem','data_envio']]
+      rel.forEach(r=> rows.push([r.nome, r.email, r.cil, r.status, `"${r.mensagem.replace(/"/g,'""')}"`, r.data_envio]))
+      const csv = rows.map(r=> r.join(',')).join('
+')
+      const blob = new Blob([csv], {type: 'text/csv'})
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = 'relatorio_envio.csv'; a.click(); URL.revokeObjectURL(url)
+    }
+
+    // Inicializar app
+    init()
+  </script>
+</body>
+</html>

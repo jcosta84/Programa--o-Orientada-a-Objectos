@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="pt-PT">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gestão de Clientes — Sistema Completo</title>
+
+  <style>
+    :root {
+      --bg: #f7fafc;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --accent: #2563eb;
+    }
+
+    body {
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      margin: 0;
+      background: var(--bg);
+      color: #111827;
+    }
+
+    .container {
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    nav {
+      width: 230px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tab {
+      background: var(--card);
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .tab:hover {
+      background: #eef2ff;
+    }
+
+    .tab.active {
+      border-color: var(--accent);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+    }
+
+    .content {
+      flex: 1;
+      margin-left: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 10px;
+      margin-top: 14px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .06);
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    input[type=text],
+    input[type=email],
+    input[type=file],
+    select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+
+    button {
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 8px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .small {
+      font-size: 13px;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .success {
+      color: green;
+    }
+
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <!-- MENU LATERAL -->
+    <nav id="tabs">
+      <div class="tab active" data-tab="cadastro">Cadastro</div>
+      <div class="tab" data-tab="cc">Para Conhecimento (CC)</div>
+      <div class="tab" data-tab="consultar">Consultar Cadastro</div>
+      <div class="tab" data-tab="envio">Envio de E-mails</div>
+      <div class="tab" data-tab="relatorio">Relatório</div>
+    </nav>
+
+    <!-- CONTEÚDO -->
+    <div class="content">
+
+      <h2>📧 Gestão de Clientes — Sistema Completo</h2>
+      <p class="small muted">Dados armazenados em localStorage</p>
+
+      <!-- CADASTRO -->
+      <section id="cadastro" class="card">
+        <h3>📋 Cadastro de Cliente</h3>
+
+        <form id="formCadastro">
+
+          <label>CIL</label>
+          <input type="text" id="cil" required />
+
+          <label>Nome</label>
+          <input type="text" id="nome" required />
+
+          <label>Email</label>
+          <input type="email" id="email" required />
+
+          <label>Nome PDF (gerado automaticamente)</label>
+          <input type="text" id="nomePdf" disabled />
+
+          <button type="submit">Cadastrar Cliente</button>
+
+        </form>
+        <div id="msgCadastro" class="small muted"></div>
+      </section>
+
+      <!-- PARA CONHECIMENTO -->
+      <section id="cc" class="card" style="display:none">
+        <h3>📋 E-mails CC</h3>
+
+        <label>Adicionar CC</label>
+        <input type="email" id="novoCc" placeholder="email@dominio.com" />
+        <button id="btnAddCc">Adicionar</button>
+
+        <div id="listaCc"></div>
+      </section>
+
+      <!-- CONSULTAR -->
+      <section id="consultar" class="card" style="display:none">
+        <h3>🔎 Consultar Cadastro</h3>
+
+        <label>Filtrar por CIL</label>
+        <input type="text" id="selCil" placeholder="Digite o CIL para filtrar">
+        <button id="btnFiltrar">Aplicar Filtro</button>
+
+        <div id="tabelaClientes"></div>
+      </section>
+
+      <!-- ENVIO -->
+      <section id="envio" class="card" style="display:none">
+        <h3>📤 Envio de E-mails</h3>
+        <p class="small muted">Selecione PDFs com o mesmo nome definido no cadastro.</p>
+
+        <input type="file" id="pdfs" multiple accept="application/pdf" />
+        <button id="btnEnviar">Simular Envio</button>
+
+        <div id="progresso" class="small muted"></div>
+      </section>
+
+      <!-- RELATÓRIO -->
+      <section id="relatorio" class="card" style="display:none">
+        <h3>📊 Relatório de Envios</h3>
+
+        <button id="btnGerarCSV">Exportar CSV</button>
+        <button id="btnLimparRel">Limpar Relatório</button>
+
+        <div id="tabelaRelatorio"></div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- SCRIPT COMPLETO -->
+  <script>
+    const DB = {
+      CLIENTES: "clientes_db",
+      CC: "cc_db",
+      REL: "rel_db"
+    };
+
+    const load = k => JSON.parse(localStorage.getItem(k) || "[]");
+    const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+    function init() {
+      document.querySelectorAll("#tabs .tab").forEach(t =>
+        t.addEventListener("click", () => changeTab(t.dataset.tab))
+      );
+
+      cil.oninput = () => nomePdf.value = cil.value ? cil.value + ".pdf" : "";
+
+      formCadastro.onsubmit = e => {
+        e.preventDefault();
+        cadastrar();
+      };
+
+      btnAddCc.onclick = addCc;
+      btnFiltrar.onclick = renderClientes;
+      btnEnviar.onclick = simularEnvio;
+      btnGerarCSV.onclick = exportarCSV;
+      btnLimparRel.onclick = limparRelatorio;
+
+      renderCc();
+      renderClientes();
+      renderSelectCIL();
+      renderRelatorio();
+    }
+
+    function changeTab(t) {
+      document.querySelectorAll("section").forEach(s => s.style.display = "none");
+      document.getElementById(t).style.display = "block";
+
+      document.querySelectorAll("#tabs .tab").forEach(tb => tb.classList.remove("active"));
+      document.querySelector(`#tabs .tab[data-tab=${t}]`).classList.add("active");
+    }
+
+    /* -------- CADASTRO -------- */
+    function cadastrar() {
+      const c = cil.value.trim();
+      const n = nome.value.trim();
+      const e = email.value.trim();
+
+      if (!c || !n || !e) {
+        msgCadastro.textContent = "Preencha todos os campos.";
+        msgCadastro.className = "error small";
+        return;
+      }
+
+      const db = load(DB.CLIENTES);
+      if (db.some(x => x.cil === c)) {
+        msgCadastro.textContent = "Cliente já existe.";
+        msgCadastro.className = "error small";
+        return;
+      }
+
+      db.push({
+        cil: c,
+        nome: n,
+        email: e,
+        arquivo_anexo: c + ".pdf"
+      });
+
+      save(DB.CLIENTES, db);
+
+      msgCadastro.textContent = "Cliente cadastrado com sucesso!";
+      msgCadastro.className = "success small";
+
+      formCadastro.reset();
+      nomePdf.value = "";
+
+      renderClientes();
+      renderSelectCIL();
+    }
+
+    /* -------- LISTAGEM -------- */
+    function renderClientes() {
+      const db = load(DB.CLIENTES);
+      const filtro = Array.from(selCil.selectedOptions).map(o => o.value);
+
+      const lista = filtro.length ? db.filter(c => filtro.includes(c.cil)) : db;
+
+      if (!lista.length) {
+        tabelaClientes.innerHTML = "<p class='small muted'>Nenhum cliente encontrado.</p>";
+        return;
+      }
+
+      let html = `
+        <table><thead>
+          <tr><th>CIL</th><th>Nome</th><th>Email</th><th>Anexo</th><th>Ações</th></tr>
+        </thead><tbody>`;
+
+      lista.forEach(c => {
+        html += `
+          <tr>
+            <td>${c.cil}</td>
+            <td>${c.nome}</td>
+            <td>${c.email}</td>
+            <td class="small muted">${c.arquivo_anexo}</td>
+            <td>
+              <button onclick="editar('${c.cil}')">Editar</button>
+              <button onclick="remover('${c.cil}')">Excluir</button>
+            </td>
+          </tr>`;
+      });
+
+      tabelaClientes.innerHTML = html + "</tbody></table>";
+    }
+
+    function renderSelectCIL() {
+      const db = load(DB.CLIENTES);
+      selCil.innerHTML = db.map(c => `<option>${c.cil}</option>`).join("");
+    }
+
+    function editar(cil) {
+      const db = load(DB.CLIENTES);
+      const c = db.find(x => x.cil === cil);
+
+      const nomeNovo = prompt("Nome:", c.nome);
+      if (nomeNovo === null) return;
+
+      const emailNovo = prompt("Email:", c.email);
+      if (emailNovo === null) return;
+
+      c.nome = nomeNovo;
+      c.email = emailNovo;
+
+      save(DB.CLIENTES, db);
+      renderClientes();
+    }
+
+    function remover(cil) {
+      if (!confirm("Deseja excluir este cliente?")) return;
+
+      const db = load(DB.CLIENTES).filter(c => c.cil !== cil);
+      save(DB.CLIENTES, db);
+
+      renderClientes();
+      renderSelectCIL();
+    }
+
+    /* -------- CC -------- */
+    function addCc() {
+      const email = novoCc.value.trim();
+      if (!email) return alert("Digite um email.");
+
+      const db = load(DB.CC);
+      if (db.includes(email)) return alert("Email já existe.");
+
+      db.push(email);
+      save(DB.CC, db);
+
+      novoCc.value = "";
+      renderCc();
+    }
+
+    function renderCc() {
+      const db = load(DB.CC);
+
+      if (!db.length) {
+        listaCc.innerHTML = "<p class='small muted'>Nenhum email CC cadastrado.</p>";
+        return;
+      }
+
+      let html = "<table><thead><tr><th>Email</th><th>Ação</th></tr></thead><tbody>";
+
+      db.forEach((e, i) => {
+        html += `<tr><td>${e}</td><td><button onclick="remCc(${i})">Remover</button></td></tr>`;
+      });
+
+      listaCc.innerHTML = html + "</tbody></table>";
+    }
+
+    function remCc(i) {
+      const db = load(DB.CC);
+      db.splice(i, 1);
+      save(DB.CC, db);
+      renderCc();
+    }
+
+    /* -------- ENVIO -------- */
+    async function simularEnvio() {
+      const pdfs = Array.from(document.getElementById("pdfs").files);
+      if (!pdfs.length) return alert("Selecione PDFs.");
+
+      const db = load(DB.CLIENTES);
+      if (!db.length) return alert("Nenhum cliente cadastrado.");
+
+      const map = {};
+      pdfs.forEach(f => map[f.name] = true);
+
+      let rel = load(DB.REL);
+
+      for (let c of db) {
+        const ok = map[c.arquivo_anexo];
+
+        rel.unshift({
+          nome: c.nome,
+          email: c.email,
+          cil: c.cil,
+          status: ok ? "Sucesso" : "Pendente",
+          mensagem: ok ? "Enviado" : "Arquivo ausente",
+          data: new Date().toISOString()
+        });
+
+        progresso.textContent = `Processando ${c.cil}...`;
+        await new Promise(r => setTimeout(r, 200));
+      }
+
+      save(DB.REL, rel);
+      renderRelatorio();
+
+      alert("Processo concluído!");
+    }
+
+    /* -------- RELATÓRIO -------- */
+    function renderRelatorio() {
+      const rel = load(DB.REL);
+
+      if (!rel.length) {
+        tabelaRelatorio.innerHTML = "<p class='small muted'>Nenhum registro.</p>";
+        return;
+      }
+
+      let html = `
+        <table><thead>
+          <tr><th>CIL</th><th>Nome</th><th>Email</th><th>Status</th><th>Mensagem</th><th>Data</th></tr>
+        </thead><tbody>`;
+
+      rel.forEach(r => {
+        html += `
+          <tr>
+            <td>${r.cil}</td>
+            <td>${r.nome}</td>
+            <td>${r.email}</td>
+            <td>${r.status}</td>
+            <td class="small muted">${r.mensagem}</td>
+            <td>${new Date(r.data).toLocaleString()}</td>
+          </tr>`;
+      });
+
+      tabelaRelatorio.innerHTML = html + "</tbody></table>";
+    }
+
+    function limparRelatorio() {
+      if (!confirm("Apagar relatório?")) return;
+      save(DB.REL, []);
+      renderRelatorio();
+    }
+
+    function exportarCSV() {
+      const rel = load(DB.REL);
+      if (!rel.length) return alert("Relatório vazio.");
+
+      const rows = [
+        ["cil", "nome", "email", "status", "mensagem", "data"],
+        ...rel.map(r => [
+          r.cil, r.nome, r.email, r.status,
+          `"${r.mensagem}"`, r.data
+        ])
+      ];
+
+      const csv = rows.map(r => r.join(",")).join("\n");
+
+      const file = new Blob([csv], { type: "text/csv" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(file);
+      a.download = "relatorio_envio.csv";
+      a.click();
+    }
+
+    init();
+  </script>
+</body>
+
+</html>
