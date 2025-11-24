@@ -1,0 +1,10 @@
+----------- FACTURA -----------
+Empresa de Telecomunicações US
+Cliente: paulo costa
+Número: 9850053
+--------------------------------
+
+Destino              Segundos   Região          Valor     
+9932569              130        Nacional        55,90     
+
+TOTAL: 55,90 ECV
