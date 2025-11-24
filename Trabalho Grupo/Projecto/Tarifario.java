@@ -1,3 +1,4 @@
+package Projecto;
 public class Tarifario {
 
     public String detectarRegiao(String destino) {

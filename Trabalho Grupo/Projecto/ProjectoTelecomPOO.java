@@ -1,3 +1,4 @@
+package Projecto;
 import java.util.Scanner;
 
 public class ProjectoTelecomPOO {
