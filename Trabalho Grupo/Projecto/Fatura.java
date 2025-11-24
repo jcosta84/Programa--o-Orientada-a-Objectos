@@ -1,4 +1,5 @@
 package Projecto;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.List;
@@ -6,9 +7,19 @@ import java.io.IOException;
 
 public class Fatura {
 
+    private static final String PASTA_FATURAS = "C:\\Users\\EDEC\\Dropbox\\US\\Disciplinas\\2º Ano\\Programação Orientada a Objectos\\Trabalho Grupo\\Projecto\\faturas";
+
     public static void gerarFatura(Cliente cliente, List<Chamada> chamadas) {
         double total = 0;
-        String nomeFicheiro = "Fatura_" + cliente.getNome() + ".txt";
+
+        // cria pasta "faturas" se não existir
+        File pasta = new File(PASTA_FATURAS);
+        if (!pasta.exists()) {
+            pasta.mkdirs();
+        }
+
+        // caminho completo do arquivo
+        String nomeFicheiro = PASTA_FATURAS + File.separator + "Fatura_" + cliente.getNome() + ".txt";
 
         try (PrintWriter pw = new PrintWriter(new FileWriter(nomeFicheiro))) {
 
@@ -34,6 +45,6 @@ public class Fatura {
             System.out.println("Erro ao escrever fatura: " + e.getMessage());
         }
 
-        System.out.println("Fatura gerada: " + nomeFicheiro);
+        System.out.println("Fatura gerada em: " + nomeFicheiro);
     }
 }
